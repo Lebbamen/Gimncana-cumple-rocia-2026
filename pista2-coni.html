@@ -209,5 +209,293 @@
         }, 300); // Revisa cada 300ms
     })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<style>
+    /* CONTENEDOR DE BOTONES CENTRADO EN PANTALLA */
+    #ac-final-buttons {
+        position: fixed;
+        top: 50%; /* Centro vertical */
+        left: 50%; /* Centro horizontal */
+        transform: translate(-50%, -50%); /* Ajuste exacto al centro */
+        display: none; /* Se activa al final */
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+        z-index: 9999;
+        width: 90%; /* Asegura que no se corten en móviles pequeños */
+    }
+
+    /* ESTILO BASE BOTONES AC */
+    .ac-btn {
+        border: 4px solid #fff;
+        color: white;
+        padding: 18px 30px;
+        border-radius: 50px;
+        font-family: 'Seurat', sans-serif;
+        font-size: 1.4rem;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        max-width: 300px;
+        transition: transform 0.2s;
+        text-align: center;
+        letter-spacing: 1px;
+    }
+
+    .ac-btn:active { transform: scale(0.95); }
+
+    /* BOTÓN ESCANEAR (VERDE NOOK) */
+    #ac-qr-trigger-btn {
+        background: #84c042;
+        box-shadow: 0 6px 0 #618e31;
+        animation: pulseButton 2s infinite;
+    }
+
+    /* BOTÓN REINICIAR (ROJO CANCELAR) */
+    #ac-restart-game-btn {
+        background: #ff7e7e;
+        box-shadow: 0 6px 0 #c05050;
+    }
+
+    @keyframes pulseButton {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    /* --- NOOKÓFONO OVERLAY --- */
+    #nook-scanner-box {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #7ca164; z-index: 10000; flex-direction: column; 
+        align-items: center; justify-content: center; font-family: 'Seurat', sans-serif;
+    }
+
+    .nook-title {
+        font-size: 3rem; color: #fff; margin-bottom: 25px;
+        -webkit-text-stroke: 8px #5d4a37; paint-order: stroke fill;
+        filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.2));
+    }
+
+    #nook-device-shell {
+        width: 90%; max-width: 380px; background: #e8d595; 
+        padding: 40px; position: relative;
+        box-shadow: 0 10px 0 #c4b07a, 0 20px 30px rgba(0,0,0,0.3);
+        animation: liquidSquareExtensive 5s ease-in-out infinite;
+    }
+
+    #nook-camera-view {
+        width: 100%; aspect-ratio: 1/1; background: #000;
+        position: relative; overflow: hidden; border: 6px solid #5d4a37;
+        border-radius: 20px; z-index: 2;
+    }
+
+    #nook-video { width: 100%; height: 100%; object-fit: cover; }
+
+    #nook-target {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 75%; height: 75%; border: 4px dashed #84c042; border-radius: 20px;
+    }
+
+    @keyframes liquidSquareExtensive {
+        0%, 100% { border-radius: 15% 35% 20% 40% / 25% 20% 35% 15%; }
+        33%      { border-radius: 35% 20% 40% 15% / 20% 35% 15% 25%; }
+        66%      { border-radius: 20% 40% 15% 35% / 35% 15% 25% 20%; }
+    }
+
+    #nook-close-btn {
+        margin-top: 40px; background: #ff7e7e; color: white;
+        border: 4px solid #fff; padding: 12px 45px; border-radius: 30px;
+        font-size: 1.2rem; font-weight: bold; cursor: pointer;
+        box-shadow: 0 5px 0 #c05050;
+    }
+</style>
+
+<div id="ac-final-buttons">
+    <button id="ac-qr-trigger-btn" class="ac-btn">📱 Abrir Nookófono</button>
+    <button id="ac-restart-game-btn" class="ac-btn">🔄 Reiniciar </button>
+</div>
+
+<div id="nook-scanner-box">
+    <div class="nook-title">Nookófono</div>
+    <div id="nook-device-shell">
+        <div id="nook-camera-view">
+            <video id="nook-video" playsinline></video>
+            <div id="nook-target"></div>
+        </div>
+    </div>
+    <button id="nook-close-btn">CANCELAR</button>
+</div>
+
+<script>
+    (function() {
+        const finalButtons = document.getElementById('ac-final-buttons');
+        const triggerBtn = document.getElementById('ac-qr-trigger-btn');
+        const restartBtn = document.getElementById('ac-restart-game-btn');
+        const scannerBox = document.getElementById('nook-scanner-box');
+        const video = document.getElementById('nook-video');
+        const closeBtn = document.getElementById('nook-close-btn');
+        let stream = null;
+
+        // --- DETECTOR DE FINAL UNIVERSAL ---
+        function checkEndOfConversation() {
+            const originalRestart = document.getElementById('btn-reiniciar');
+            if (originalRestart && window.getComputedStyle(originalRestart).display !== 'none') {
+                setTimeout(() => {
+                    originalRestart.style.display = 'none';
+                    const charImg = document.getElementById('character-img');
+                    const diagCont = document.getElementById('dialog-container');
+                    
+                    // Suavizamos la desaparición de lo anterior
+                    if(charImg) { charImg.style.transition = 'opacity 0.8s'; charImg.style.opacity = '0'; }
+                    if(diagCont) { diagCont.style.transition = 'opacity 0.8s'; diagCont.style.opacity = '0'; }
+                    
+                    setTimeout(() => {
+                        if(charImg) charImg.style.display = 'none';
+                        if(diagCont) diagCont.style.display = 'none';
+                        finalButtons.style.display = 'flex'; // Aparecen en el centro
+                    }, 800);
+                }, 500);
+            } else {
+                requestAnimationFrame(checkEndOfConversation);
+            }
+        }
+
+        checkEndOfConversation();
+
+        // LÓGICA REINICIAR
+        restartBtn.onclick = () => { location.reload(); };
+
+        // LÓGICA ESCÁNER
+        triggerBtn.onclick = async () => {
+            scannerBox.style.display = 'flex';
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+                video.play();
+                requestAnimationFrame(scanTick);
+            } catch (err) {
+                alert("Error de cámara. Revisa los permisos.");
+                scannerBox.style.display = 'none';
+            }
+        };
+
+        closeBtn.onclick = () => {
+            if(stream) stream.getTracks().forEach(t => t.stop());
+            scannerBox.style.display = 'none';
+        };
+
+        function scanTick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA && scannerBox.style.display === 'flex') {
+                const canvas = document.createElement("canvas");
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+                if (code && code.data.startsWith('http')) {
+                    if(stream) stream.getTracks().forEach(t => t.stop());
+                    window.location.href = code.data;
+                    return;
+                }
+            }
+            requestAnimationFrame(scanTick);
+        }
+    })();
+</script>
+<style>
+    /* CONTENEDOR DE CLIMA */
+    #nook-weather-layer {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 10; overflow: hidden;
+    }
+
+    /* EFECTO DE SOL (Resplandor cálido) */
+    .sun-glow {
+        position: absolute; top: -10%; right: -10%;
+        width: 300px; height: 300px;
+        background: radial-gradient(circle, rgba(255,255,224,0.3) 0%, transparent 70%);
+        animation: sunPulse 8s ease-in-out infinite;
+    }
+
+    @keyframes sunPulse {
+        0%, 100% { opacity: 0.5; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.2); }
+    }
+
+    /* NUBES SUTILES */
+    .nook-cloud {
+        position: absolute; background: rgba(255, 255, 255, 0.4);
+        filter: blur(40px); border-radius: 50%;
+        animation: moveClouds linear infinite;
+    }
+
+    @keyframes moveClouds {
+        from { left: -200px; }
+        to { left: 110%; }
+    }
+
+    /* HOJAS DE LA BRISA */
+    .leaf-particle {
+        position: absolute;
+        width: 15px; height: 10px;
+        background: #a3d977; /* Verde hoja AC */
+        border-radius: 10px 2px;
+        opacity: 0.8;
+        animation: leafFall linear infinite;
+    }
+
+    @keyframes leafFall {
+        0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+        10% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translate(120vw, 50vh) rotate(720deg); opacity: 0; }
+    }
+</style>
+
+<div id="nook-weather-layer">
+    <div class="sun-glow"></div>
+    <div class="nook-cloud" style="width:300px; height:100px; top:10%; animation-duration: 60s;"></div>
+    <div class="nook-cloud" style="width:200px; height:80px; top:25%; animation-duration: 45s; animation-delay: -10s;"></div>
+</div>
+
+<script>
+    (function() {
+        // Generador de hojas dinámico
+        const weatherLayer = document.getElementById('nook-weather-layer');
+        const leafCount = 8; // Número de hojas simultáneas
+
+        function createLeaf() {
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf-particle';
+            
+            // Posición inicial aleatoria en el eje Y
+            leaf.style.top = Math.random() * 80 + '%';
+            leaf.style.left = '-20px';
+            
+            // Tamaño y velocidad aleatoria
+            const size = Math.random() * 10 + 10;
+            leaf.style.width = size + 'px';
+            leaf.style.height = (size * 0.7) + 'px';
+            
+            const duration = Math.random() * 5 + 5;
+            leaf.style.animationDuration = duration + 's';
+            
+            // Retraso aleatorio para que no salgan todas a la vez
+            leaf.style.animationDelay = Math.random() * 10 + 's';
+
+            weatherLayer.appendChild(leaf);
+
+            // Reiniciar la hoja al terminar su animación para ahorrar memoria
+            leaf.addEventListener('animationiteration', () => {
+                leaf.style.top = Math.random() * 80 + '%';
+            });
+        }
+
+        // Crear las hojas iniciales
+        for (let i = 0; i < leafCount; i++) {
+            createLeaf();
+        }
+    })();
+</script>
 </body>
 </html>
+
