@@ -5,14 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gincana Animal Crossing - Gandulio y Encina</title>
     <style>
-        /* Importación de fuente Seurat */
         @font-face {
             font-family: 'Seurat';
-            src: url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff2') format('woff2'),
-                 url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff') format('woff');
+            src: url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff2') format('woff2');
             font-weight: bold;
-            font-style: normal;
-            font-display: swap;
         }
 
         * { box-sizing: border-box; }
@@ -21,7 +17,7 @@
             background: #cbd58d; 
             background-image: radial-gradient(rgba(255,255,255,0.4) 15%, transparent 20%);
             background-size: 40px 40px;
-            font-family: 'Seurat', 'Arial Rounded MT Bold', 'Helvetica', sans-serif; 
+            font-family: 'Seurat', sans-serif; 
             display: flex; 
             flex-direction: column; 
             justify-content: flex-end; 
@@ -33,37 +29,35 @@
             transition: background 1s ease;
         }
 
-        #magic-particles {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 10;
-            display: none;
+        /* CAPA DE HOJAS */
+        #nook-weather { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .leaf { 
+            position: absolute; width: 15px; height: 10px; 
+            background: #a3d977; border-radius: 10px 2px; opacity: 0.8; 
+            animation: leafFall linear infinite; 
         }
+        @keyframes leafFall { 0% { transform: translate(-20px, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.8; } 100% { transform: translate(110vw, 50vh) rotate(720deg); opacity: 0; } }
 
+        /* PARTÍCULAS MÁGICAS ORIGINALES */
+        #magic-particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10; display: none;
+        }
         .sparkle {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            filter: blur(1px);
-            box-shadow: 0 0 10px white;
+            position: absolute; background: white; border-radius: 50%;
+            filter: blur(1px); box-shadow: 0 0 10px white;
             animation: flash var(--d) infinite ease-in-out;
         }
+        @keyframes flash { 0%, 100% { opacity: 0; transform: scale(0); } 50% { opacity: 1; transform: scale(1); } }
 
-        @keyframes flash {
-            0%, 100% { opacity: 0; transform: scale(0); }
-            50% { opacity: 1; transform: scale(1); }
+        /* CONTENEDOR PERSONAJE FIJO */
+        .char-container {
+            height: 280px; display: flex; align-items: flex-end; z-index: 30; margin-bottom: -30px;
         }
-
         #character-img {
-            width: 65vw; 
-            max-width: 260px;
-            height: auto;
-            z-index: 30;
-            margin-bottom: -30px; 
+            width: 70vw; max-width: 300px; height: auto;
             filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
-            pointer-events: none;
-            transition: transform 0.2s ease-out, filter 1s ease;
+            pointer-events: none; transition: opacity 0.3s ease, filter 1s ease;
         }
 
         #overlay {
@@ -80,73 +74,47 @@
         }
 
         #dialog-container {
-            width: 90%; 
-            max-width: 600px; 
-            height: 190px; 
-            background: #fffdf0; 
-            border: 6px solid #f3e5ab; 
-            border-radius: 40px;
-            padding: 25px 30px; 
-            position: relative; 
-            box-shadow: 0 8px 0 #d9c9a0; 
-            cursor: pointer; 
-            display: none;
-            z-index: 20;
+            width: 90%; max-width: 600px; height: 190px; 
+            background: #fffdf0; border: 6px solid #f3e5ab; border-radius: 40px;
+            padding: 25px 30px; position: relative; box-shadow: 0 8px 0 #d9c9a0; 
+            cursor: pointer; display: none; z-index: 20;
         }
 
         #name-tag {
-            position: absolute; 
-            top: -20px; left: 30px; 
-            background: #78a45c; 
-            color: white; 
-            padding: 8px 20px; 
-            border-radius: 20px; 
-            font-weight: bold; 
-            font-size: 1.1rem;
-            border: 3px solid #fff;
-            z-index: 40;
-            font-family: 'Seurat', sans-serif;
+            position: absolute; top: -20px; left: 30px; 
+            color: white; padding: 8px 20px; border-radius: 20px; 
+            font-weight: bold; font-size: 1.1rem; border: 3px solid #fff; z-index: 40;
         }
 
-        #text { 
-            color: #5d4a37; font-family: 'Seurat', sans-serif;
-            font-weight: bold; font-size: clamp(1.1rem, 4vw, 1.3rem); 
-            line-height: 1.3; overflow: hidden; height: 100%;
-            white-space: pre-line;
-        }
-
-        #btn-reiniciar {
-            display: none;
-            position: absolute;
-            bottom: 20px;
-            right: 30px;
-            background: #78a45c;
-            border: 3px solid #fff; 
-            color: white;
-            padding: 8px 15px; 
-            border-radius: 25px; 
-            font-size: 0.9rem;
-            font-weight: bold; 
-            cursor: pointer; 
-            box-shadow: 0 4px 0 #4e6b3b;
-            z-index: 50;
-            font-family: 'Seurat', sans-serif;
-        }
+        #text { color: #5d4a37; font-weight: bold; font-size: clamp(1.1rem, 4vw, 1.3rem); line-height: 1.3; white-space: pre-line; }
 
         #arrow { 
             position: absolute; bottom: 20px; right: 30px; width: 0; height: 0; 
             border-left: 10px solid transparent; border-right: 10px solid transparent; 
             border-top: 15px solid #78a45c; animation: bounce 0.6s infinite alternate;
         }
-
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(5px); } }
+
+        /* ESTILOS NOOK */
+        .nook-title { color: white; text-align: center; font-size: 2.2rem; -webkit-text-stroke: 8px #4b633a; paint-order: stroke fill; margin-bottom: 20px; }
+        #nook-loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #05070a; z-index: 5000; display: none; }
+        .loading-gif { position: absolute; bottom: 30px; right: 30px; width: 80px; }
+        #nook-master-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; flex-direction: column; gap: 20px; align-items: center; z-index: 1000; width: 90%; }
+        .ac-btn { border: 4px solid #fff; color: white; padding: 18px 30px; border-radius: 50px; font-size: 1.4rem; font-weight: bold; cursor: pointer; width: 100%; max-width: 300px; text-align: center; box-shadow: 0 6px 0 rgba(0,0,0,0.2); }
+        #nook-scanner-ui { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #7ca164; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+        #nook-shell { width: 300px; background: #e8d595; padding: 30px; border-radius: 30px; box-shadow: 0 10px 0 #c4b07a; }
+        #camera-box { width: 100%; aspect-ratio: 1/1; background: #000; border: 5px solid #5d4a37; border-radius: 15px; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body onclick="handleGlobalClick()">
 
+    <div id="nook-weather"></div>
     <div id="magic-particles"></div>
 
-    <img id="character-img" src="https://dodo.ac/np/images/5/5f/Leif_LINE_Animated_Sticker.png" alt="Personaje">
+    <div class="char-container">
+        <img id="character-img" src="https://dodo.ac/np/images/5/5f/Leif_LINE_Animated_Sticker.png" alt="Personaje">
+    </div>
 
     <div id="overlay">
         <button id="btn-abrir" onclick="empezarJuego(event)">Rincon de relax de Gandulio y Encina.</button>
@@ -155,15 +123,34 @@
     <div id="dialog-container">
         <div id="name-tag">Gandulio</div> 
         <div id="text"></div>
-        <button id="btn-reiniciar" onclick="reiniciarGincana(event)">Reiniciar</button>
         <div id="arrow" style="display:none"></div>
+    </div>
+
+    <div id="nook-loading-screen">
+        <img class="loading-gif" src="https://media.tenor.com/PWXsfdUcE1wAAAAi/animal-crossing-waiting.gif">
+    </div>
+
+    <div id="nook-master-menu">
+        <h2 class="nook-title">¿Qué quieres hacer ahora?</h2>
+        <button class="ac-btn" style="background: #84c042; box-shadow: 0 6px 0 #618e31;" onclick="iniciarEscaner(event)">📱 USAR NOOKÓFONO</button>
+        <button class="ac-btn" style="background: #ff7e7e; box-shadow: 0 6px 0 #c05050;" onclick="location.reload()">🔄 REPETIR PISTA</button>
+    </div>
+
+    <div id="nook-scanner-ui">
+        <h2 class="nook-title">Nookófono</h2>
+        <div id="nook-shell"><div id="camera-box"><video id="nook-video" playsinline></video></div></div>
+        <button class="ac-btn" style="background:#ff7e7e; margin-top:20px;" onclick="cerrarEscaner()">CANCELAR</button>
     </div>
 
     <audio id="voice-gandulio" src="gandulio.wav" loop></audio>
     <audio id="voice-encina" src="encina.wav" loop></audio>
+    <audio id="click-snd" src="./click.wav"></audio>
     <audio id="magic-music" src="Hypno K.K..mp3" loop></audio>
+    <audio id="global-bgm" src="pista7.mp3" loop></audio>
 
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
+        // URLs Originales de Pista 7
         const imgGandulio = "https://dodo.ac/np/images/1/1c/Leif_NH.png";
         const imgEncina = "https://dodo.ac/np/images/c/c4/Poppy_NH.png";
 
@@ -177,12 +164,10 @@
             { char: "Encina", text: "¡Él casi se queda frito mientras preparaba el refrigerio! ¡Ese conjunto de Pili te sienta de maravilla, terroncito!" },
             { char: "Gandulio", text: "Es verdad, oye... qué salado te queda. Ya tienes el transporte, el confeti, el concierto y el estilazo." },
             { char: "Gandulio", text: "Pero para encontrar el final, vas a tener que pensar un poco, saleroso... escucha bien:" },
-            // POEMA DIVIDIDO EN 4 PARTES
             { char: "Gandulio", text: "Busca el lugar donde la charla fluye,\ny el cansancio del día siempre se diluye.", magic: true },
             { char: "Gandulio", text: "Bajo lo que ves, hay otra realidad,\ndonde dados y fichas guardan su verdad.", magic: true },
             { char: "Gandulio", text: "No es bosque ni playa, pero hay mucha madera,\ndonde el hambre se calma y la tarta te espera.", magic: true },
             { char: "Gandulio", text: "Si exploras el fondo que el azar domina...\n¡hallarás la sorpresa del gran Azulino!", magic: true },
-            
             { char: "Encina", text: "¡Calabacitas!, ¡estoy tan emocionada que me tiemblan hasta las orejas, nutinú! 🐿️" },
             { char: "Encina", text: "¡Corre, corre! ¡Sigue la pista antes de que el misterio se resuelva solo! ¡Va a ser un momento ideal! 🏃‍♀️💨" }
         ];
@@ -192,122 +177,105 @@
         let isTyping = false;
         let gameActive = false;
 
-        const textDiv = document.getElementById("text");
-        const nameTag = document.getElementById("name-tag");
-        const charImg = document.getElementById("character-img");
-        const restartBtn = document.getElementById("btn-reiniciar");
-        const arrow = document.getElementById("arrow");
-        const magicMusic = document.getElementById("magic-music");
-        const particlesContainer = document.getElementById("magic-particles");
+        function playClick() { const s = document.getElementById("click-snd"); s.currentTime = 0; s.play().catch(()=>{}); }
 
         function createSparkles() {
-            particlesContainer.innerHTML = '';
+            const container = document.getElementById("magic-particles");
+            container.innerHTML = '';
             for(let i=0; i<30; i++) {
                 const s = document.createElement('div');
                 s.className = 'sparkle';
                 const size = Math.random() * 5 + 2;
-                s.style.width = size + 'px';
-                s.style.height = size + 'px';
-                s.style.left = Math.random() * 100 + '%';
-                s.style.top = Math.random() * 100 + '%';
+                s.style.width = size + 'px'; s.style.height = size + 'px';
+                s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
                 s.style.setProperty('--d', (Math.random() * 2 + 1) + 's');
-                s.style.animationDelay = Math.random() * 2 + 's';
-                particlesContainer.appendChild(s);
+                container.appendChild(s);
             }
         }
 
         function updateCharacter() {
             const currentObj = messages[currentMsgIndex];
-            nameTag.innerHTML = currentObj.char;
-            
+            const nameTag = document.getElementById("name-tag");
+            const charImg = document.getElementById("character-img");
+            const particles = document.getElementById("magic-particles");
+            const magicMusic = document.getElementById("magic-music");
+            const bgm = document.getElementById("global-bgm");
+
+            // Evento Mágico Original (Música e iluminación)
             if (currentObj.magic) {
                 document.body.style.background = "#2a1b3d"; 
                 document.body.style.backgroundImage = "radial-gradient(rgba(138, 43, 226, 0.4) 15%, transparent 20%)";
                 charImg.style.filter = "drop-shadow(0 0 20px rgba(191, 123, 255, 0.8)) brightness(1.2)";
-                particlesContainer.style.display = "block";
-                if(particlesContainer.children.length === 0) createSparkles();
-                magicMusic.volume = 0.5;
+                particles.style.display = "block";
+                if(particles.children.length === 0) createSparkles();
+                bgm.pause();
                 if(magicMusic.paused) magicMusic.play();
             } else {
                 document.body.style.background = "#cbd58d";
                 document.body.style.backgroundImage = "radial-gradient(rgba(255,255,255,0.4) 15%, transparent 20%)";
                 charImg.style.filter = "drop-shadow(0 5px 15px rgba(0,0,0,0.1))";
-                particlesContainer.style.display = "none";
+                particles.style.display = "none";
                 magicMusic.pause();
-                magicMusic.currentTime = 0;
+                if(gameActive && bgm.paused) bgm.play();
             }
 
-            if (currentObj.char === "Gandulio") {
-                charImg.src = imgGandulio;
-                nameTag.style.background = "#78a45c"; 
-                arrow.style.borderTopColor = "#78a45c";
-            } else {
-                charImg.src = imgEncina;
-                nameTag.style.background = "#d35b3e"; 
-                arrow.style.borderTopColor = "#d35b3e";
+            const targetImg = currentObj.char === "Gandulio" ? imgGandulio : imgEncina;
+            if (charImg.src !== targetImg) {
+                charImg.style.opacity = "0";
+                setTimeout(() => { charImg.src = targetImg; charImg.style.opacity = "1"; }, 100);
             }
+
+            nameTag.innerHTML = currentObj.char;
+            nameTag.style.background = currentObj.char === "Gandulio" ? "#78a45c" : "#d35b3e";
+            document.getElementById("arrow").style.borderTopColor = currentObj.char === "Gandulio" ? "#78a45c" : "#d35b3e";
         }
 
         function handleGlobalClick() {
             if (!gameActive) return;
             if (isTyping) {
                 charIndex = messages[currentMsgIndex].text.length;
-                textDiv.innerHTML = messages[currentMsgIndex].text;
+                document.getElementById("text").innerHTML = messages[currentMsgIndex].text;
                 stopVoice();
+            } else if (currentMsgIndex < messages.length - 1) {
+                playClick();
+                currentMsgIndex++;
+                updateCharacter();
+                startMessage();
             } else {
-                if (currentMsgIndex < messages.length - 1) {
-                    currentMsgIndex++;
-                    updateCharacter();
-                    startMessage();
-                }
+                mostrarMenuFinal();
             }
         }
 
         function startMessage() {
-            isTyping = true;
-            charIndex = 0;
-            textDiv.innerHTML = "";
-            restartBtn.style.display = "none";
-            arrow.style.display = "none";
-            
+            isTyping = true; charIndex = 0;
+            document.getElementById("text").innerHTML = "";
+            document.getElementById("arrow").style.display = "none";
             const currentObj = messages[currentMsgIndex];
-            if (currentObj.char === "Gandulio") {
-                document.getElementById("voice-gandulio").play();
-            } else {
-                document.getElementById("voice-encina").play();
-            }
-            
+            if (currentObj.char === "Gandulio") document.getElementById("voice-gandulio").play();
+            else document.getElementById("voice-encina").play();
             typeWriter();
         }
 
         function typeWriter() {
             const currentText = messages[currentMsgIndex].text;
             if (charIndex < currentText.length) {
-                textDiv.innerHTML += currentText.charAt(charIndex);
+                document.getElementById("text").innerHTML += currentText.charAt(charIndex);
                 charIndex++;
                 let speed = (messages[currentMsgIndex].char === "Gandulio") ? 60 : 35;
                 setTimeout(typeWriter, speed);
-            } else {
-                stopVoice();
-            }
+            } else { stopVoice(); }
         }
 
         function stopVoice() {
             isTyping = false;
-            document.getElementById("voice-gandulio").pause();
-            document.getElementById("voice-gandulio").currentTime = 0;
-            document.getElementById("voice-encina").pause();
-            document.getElementById("voice-encina").currentTime = 0;
-            
-            if (currentMsgIndex < messages.length - 1) {
-                arrow.style.display = "block";
-            } else {
-                restartBtn.style.display = "block";
-            }
+            document.getElementById("voice-gandulio").pause(); document.getElementById("voice-gandulio").currentTime = 0;
+            document.getElementById("voice-encina").pause(); document.getElementById("voice-encina").currentTime = 0;
+            document.getElementById("arrow").style.display = "block";
         }
 
         function empezarJuego(event) {
-            event.stopPropagation(); 
+            event.stopPropagation();
+            playClick();
             document.getElementById("overlay").style.display = "none";
             document.getElementById("dialog-container").style.display = "block";
             gameActive = true;
@@ -315,345 +283,60 @@
             startMessage();
         }
 
-        function reiniciarGincana(event) {
-            event.stopPropagation(); 
-            currentMsgIndex = 0;
-            particlesContainer.innerHTML = '';
-            updateCharacter();
-            startMessage();
-        }
-    </script>
-<audio id="global-bgm" src="pista7.mp3" loop></audio>
-
-<script>
-    (function() {
-        const bgm = document.getElementById('global-bgm');
-        bgm.volume = 0.6; // Volumen de la música de fondo (0.0 a 1.0)
-
-        // Función para iniciar la música con el primer clic del usuario (exigencia de navegadores)
-        document.addEventListener('click', () => {
-            if (bgm.paused) bgm.play();
-        }, { once: true });
-
-        // Monitor de audios
-        setInterval(() => {
-            const allAudios = document.querySelectorAll('audio:not(#global-bgm)');
-            let specialAudioPlaying = false;
-
-            allAudios.forEach(audio => {
-                // Si el audio está sonando y NO es el balbuceo (animalese/voice)
-                // Ajusta los nombres de archivo según tus .wav
-                const isAnimalese = audio.src.includes('animalese') || 
-                                    audio.id.includes('voice') || 
-                                    audio.src.includes('gandulio.wav') || 
-                                    audio.src.includes('encina.wav');
-
-                if (!audio.paused && !isAnimalese) {
-                    specialAudioPlaying = true;
-                }
-            });
-
-            if (specialAudioPlaying) {
-                // Si suena algo importante (música de misterio, etc), pausamos el fondo
-                if (!bgm.paused) {
-                    bgm.pause();
-                }
-            } else {
-                // Si no hay audios especiales, el fondo sigue sonando
-                if (bgm.paused && document.getElementById('overlay').style.display === 'none') {
-                    bgm.play();
-                }
-            }
-        }, 300); // Revisa cada 300ms
-    })();
-</script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
-<style>
-    /* CONTENEDOR DE BOTONES CENTRADO EN PANTALLA */
-    #ac-final-buttons {
-        position: fixed;
-        top: 50%; /* Centro vertical */
-        left: 50%; /* Centro horizontal */
-        transform: translate(-50%, -50%); /* Ajuste exacto al centro */
-        display: none; /* Se activa al final */
-        flex-direction: column;
-        gap: 20px;
-        align-items: center;
-        z-index: 9999;
-        width: 90%; /* Asegura que no se corten en móviles pequeños */
-    }
-
-    /* ESTILO BASE BOTONES AC */
-    .ac-btn {
-        border: 4px solid #fff;
-        color: white;
-        padding: 18px 30px;
-        border-radius: 50px;
-        font-family: 'Seurat', sans-serif;
-        font-size: 1.4rem;
-        font-weight: bold;
-        cursor: pointer;
-        width: 100%;
-        max-width: 300px;
-        transition: transform 0.2s;
-        text-align: center;
-        letter-spacing: 1px;
-    }
-
-    .ac-btn:active { transform: scale(0.95); }
-
-    /* BOTÓN ESCANEAR (VERDE NOOK) */
-    #ac-qr-trigger-btn {
-        background: #84c042;
-        box-shadow: 0 6px 0 #618e31;
-        animation: pulseButton 2s infinite;
-    }
-
-    /* BOTÓN REINICIAR (ROJO CANCELAR) */
-    #ac-restart-game-btn {
-        background: #ff7e7e;
-        box-shadow: 0 6px 0 #c05050;
-    }
-
-    @keyframes pulseButton {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-    }
-
-    /* --- NOOKÓFONO OVERLAY --- */
-    #nook-scanner-box {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #7ca164; z-index: 10000; flex-direction: column; 
-        align-items: center; justify-content: center; font-family: 'Seurat', sans-serif;
-    }
-
-    .nook-title {
-        font-size: 3rem; color: #fff; margin-bottom: 25px;
-        -webkit-text-stroke: 8px #5d4a37; paint-order: stroke fill;
-        filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.2));
-    }
-
-    #nook-device-shell {
-        width: 90%; max-width: 380px; background: #e8d595; 
-        padding: 40px; position: relative;
-        box-shadow: 0 10px 0 #c4b07a, 0 20px 30px rgba(0,0,0,0.3);
-        animation: liquidSquareExtensive 5s ease-in-out infinite;
-    }
-
-    #nook-camera-view {
-        width: 100%; aspect-ratio: 1/1; background: #000;
-        position: relative; overflow: hidden; border: 6px solid #5d4a37;
-        border-radius: 20px; z-index: 2;
-    }
-
-    #nook-video { width: 100%; height: 100%; object-fit: cover; }
-
-    #nook-target {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 75%; height: 75%; border: 4px dashed #84c042; border-radius: 20px;
-    }
-
-    @keyframes liquidSquareExtensive {
-        0%, 100% { border-radius: 15% 35% 20% 40% / 25% 20% 35% 15%; }
-        33%      { border-radius: 35% 20% 40% 15% / 20% 35% 15% 25%; }
-        66%      { border-radius: 20% 40% 15% 35% / 35% 15% 25% 20%; }
-    }
-
-    #nook-close-btn {
-        margin-top: 40px; background: #ff7e7e; color: white;
-        border: 4px solid #fff; padding: 12px 45px; border-radius: 30px;
-        font-size: 1.2rem; font-weight: bold; cursor: pointer;
-        box-shadow: 0 5px 0 #c05050;
-    }
-</style>
-
-<div id="ac-final-buttons">
-    <button id="ac-qr-trigger-btn" class="ac-btn">📱 Abrir Nookófono</button>
-    <button id="ac-restart-game-btn" class="ac-btn">🔄 Reiniciar </button>
-</div>
-
-<div id="nook-scanner-box">
-    <div class="nook-title">Nookófono</div>
-    <div id="nook-device-shell">
-        <div id="nook-camera-view">
-            <video id="nook-video" playsinline></video>
-            <div id="nook-target"></div>
-        </div>
-    </div>
-    <button id="nook-close-btn">CANCELAR</button>
-</div>
-
-<script>
-    (function() {
-        const finalButtons = document.getElementById('ac-final-buttons');
-        const triggerBtn = document.getElementById('ac-qr-trigger-btn');
-        const restartBtn = document.getElementById('ac-restart-game-btn');
-        const scannerBox = document.getElementById('nook-scanner-box');
-        const video = document.getElementById('nook-video');
-        const closeBtn = document.getElementById('nook-close-btn');
-        let stream = null;
-
-        // --- DETECTOR DE FINAL UNIVERSAL ---
-        function checkEndOfConversation() {
-            const originalRestart = document.getElementById('btn-reiniciar');
-            if (originalRestart && window.getComputedStyle(originalRestart).display !== 'none') {
-                setTimeout(() => {
-                    originalRestart.style.display = 'none';
-                    const charImg = document.getElementById('character-img');
-                    const diagCont = document.getElementById('dialog-container');
-                    
-                    // Suavizamos la desaparición de lo anterior
-                    if(charImg) { charImg.style.transition = 'opacity 0.8s'; charImg.style.opacity = '0'; }
-                    if(diagCont) { diagCont.style.transition = 'opacity 0.8s'; diagCont.style.opacity = '0'; }
-                    
-                    setTimeout(() => {
-                        if(charImg) charImg.style.display = 'none';
-                        if(diagCont) diagCont.style.display = 'none';
-                        finalButtons.style.display = 'flex'; // Aparecen en el centro
-                    }, 800);
-                }, 500);
-            } else {
-                requestAnimationFrame(checkEndOfConversation);
-            }
+        function mostrarMenuFinal() {
+            playClick();
+            document.getElementById('dialog-container').style.display = 'none';
+            document.getElementById('nook-master-menu').style.display = 'flex';
+            document.querySelector('.char-container').style.opacity = '0';
+            gameActive = false;
         }
 
-        checkEndOfConversation();
+        // NOOKÓFONO LOGIC
+        async function iniciarEscaner() {
+            playClick();
+            document.getElementById('nook-loading-screen').style.display = 'block';
+            setTimeout(async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    document.getElementById('nook-video').srcObject = stream;
+                    document.getElementById('nook-video').play();
+                    document.getElementById('nook-loading-screen').style.display = 'none'; 
+                    document.getElementById('nook-scanner-ui').style.display = 'flex';
+                    window.scannerStream = stream;
+                    requestAnimationFrame(scanTick);
+                } catch (err) { alert("Error cámara"); }
+            }, 3000);
+        }
 
-        // LÓGICA REINICIAR
-        restartBtn.onclick = () => { location.reload(); };
-
-        // LÓGICA ESCÁNER
-        triggerBtn.onclick = async () => {
-            scannerBox.style.display = 'flex';
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                video.srcObject = stream;
-                video.play();
-                requestAnimationFrame(scanTick);
-            } catch (err) {
-                alert("Error de cámara. Revisa los permisos.");
-                scannerBox.style.display = 'none';
-            }
-        };
-
-        closeBtn.onclick = () => {
-            if(stream) stream.getTracks().forEach(t => t.stop());
-            scannerBox.style.display = 'none';
-        };
+        function cerrarEscaner() {
+            playClick();
+            if(window.scannerStream) window.scannerStream.getTracks().forEach(t => t.stop());
+            document.getElementById('nook-scanner-ui').style.display = 'none';
+        }
 
         function scanTick() {
-            if (video.readyState === video.HAVE_ENOUGH_DATA && scannerBox.style.display === 'flex') {
+            const v = document.getElementById('nook-video');
+            if (v && v.readyState === v.HAVE_ENOUGH_DATA) {
                 const canvas = document.createElement("canvas");
-                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                canvas.width = v.videoWidth; canvas.height = v.videoHeight;
                 const ctx = canvas.getContext("2d");
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
                 const code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
-                if (code && code.data.startsWith('http')) {
-                    if(stream) stream.getTracks().forEach(t => t.stop());
-                    window.location.href = code.data;
-                    return;
-                }
+                if (code && code.data.startsWith('http')) { window.location.href = code.data; return; }
             }
-            requestAnimationFrame(scanTick);
-        }
-    })();
-</script>
-<style>
-    /* CONTENEDOR DE CLIMA */
-    #nook-weather-layer {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        pointer-events: none; z-index: 10; overflow: hidden;
-    }
-
-    /* EFECTO DE SOL (Resplandor cálido) */
-    .sun-glow {
-        position: absolute; top: -10%; right: -10%;
-        width: 300px; height: 300px;
-        background: radial-gradient(circle, rgba(255,255,224,0.3) 0%, transparent 70%);
-        animation: sunPulse 8s ease-in-out infinite;
-    }
-
-    @keyframes sunPulse {
-        0%, 100% { opacity: 0.5; transform: scale(1); }
-        50% { opacity: 0.8; transform: scale(1.2); }
-    }
-
-    /* NUBES SUTILES */
-    .nook-cloud {
-        position: absolute; background: rgba(255, 255, 255, 0.4);
-        filter: blur(40px); border-radius: 50%;
-        animation: moveClouds linear infinite;
-    }
-
-    @keyframes moveClouds {
-        from { left: -200px; }
-        to { left: 110%; }
-    }
-
-    /* HOJAS DE LA BRISA */
-    .leaf-particle {
-        position: absolute;
-        width: 15px; height: 10px;
-        background: #a3d977; /* Verde hoja AC */
-        border-radius: 10px 2px;
-        opacity: 0.8;
-        animation: leafFall linear infinite;
-    }
-
-    @keyframes leafFall {
-        0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
-        10% { opacity: 0.8; }
-        90% { opacity: 0.8; }
-        100% { transform: translate(120vw, 50vh) rotate(720deg); opacity: 0; }
-    }
-</style>
-
-<div id="nook-weather-layer">
-    <div class="sun-glow"></div>
-    <div class="nook-cloud" style="width:300px; height:100px; top:10%; animation-duration: 60s;"></div>
-    <div class="nook-cloud" style="width:200px; height:80px; top:25%; animation-duration: 45s; animation-delay: -10s;"></div>
-</div>
-
-<script>
-    (function() {
-        // Generador de hojas dinámico
-        const weatherLayer = document.getElementById('nook-weather-layer');
-        const leafCount = 8; // Número de hojas simultáneas
-
-        function createLeaf() {
-            const leaf = document.createElement('div');
-            leaf.className = 'leaf-particle';
-            
-            // Posición inicial aleatoria en el eje Y
-            leaf.style.top = Math.random() * 80 + '%';
-            leaf.style.left = '-20px';
-            
-            // Tamaño y velocidad aleatoria
-            const size = Math.random() * 10 + 10;
-            leaf.style.width = size + 'px';
-            leaf.style.height = (size * 0.7) + 'px';
-            
-            const duration = Math.random() * 5 + 5;
-            leaf.style.animationDuration = duration + 's';
-            
-            // Retraso aleatorio para que no salgan todas a la vez
-            leaf.style.animationDelay = Math.random() * 10 + 's';
-
-            weatherLayer.appendChild(leaf);
-
-            // Reiniciar la hoja al terminar su animación para ahorrar memoria
-            leaf.addEventListener('animationiteration', () => {
-                leaf.style.top = Math.random() * 80 + '%';
-            });
+            if(document.getElementById('nook-scanner-ui').style.display === 'flex') requestAnimationFrame(scanTick);
         }
 
-        // Crear las hojas iniciales
-        for (let i = 0; i < leafCount; i++) {
-            createLeaf();
+        // Hojas
+        const w = document.getElementById('nook-weather');
+        for(let i=0; i<6; i++) {
+            const l = document.createElement('div');
+            l.className = 'leaf';
+            l.style.top = Math.random()*80+'%';
+            l.style.animationDuration = (Math.random()*4+4)+'s';
+            l.style.animationDelay = (Math.random()*5)+'s';
+            w.appendChild(l);
         }
-    })();
-</script>
+    </script>
 </body>
 </html>
-
