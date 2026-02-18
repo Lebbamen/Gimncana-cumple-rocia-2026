@@ -243,5 +243,202 @@
         }, 300); // Revisa cada 300ms
     })();
 </script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<style>
+    /* Estilo del Botón "Escanear QR" - Estilo AC Botón General */
+    #ac-qr-trigger-btn {
+        position: fixed; bottom: 15%; left: 50%; transform: translateX(-50%);
+        background: #84c042; /* Verde AC */
+        border: 4px solid #fff; color: white;
+        padding: 15px 30px; border-radius: 50px;
+        font-family: 'Seurat', sans-serif; font-size: 1.5rem; font-weight: bold;
+        cursor: pointer; box-shadow: 0 6px 0 #618e31; /* Sombra verde oscuro */
+        z-index: 2000; /* Asegura que esté por encima de todo */
+        display: none; /* Oculto por defecto */
+        transition: all 0.2s ease;
+    }
+    #ac-qr-trigger-btn:active { transform: translate(-50%, 4px); box-shadow: 0 2px 0 #618e31; }
+
+    /* Contenedor del Escáner - Estilo Nookófono */
+    #ac-qr-scanner-overlay {
+        display: none; /* Oculto por defecto */
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #6D8B55; /* Fondo verde oscuro Nookófono */
+        z-index: 3000; /* Por encima de todo */
+        flex-direction: column; align-items: center; justify-content: center;
+        gap: 20px;
+        color: #fff;
+        font-family: 'Seurat', sans-serif;
+        padding: 20px;
+    }
+
+    #ac-qr-scanner-header {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    }
+
+    #ac-qr-scanner-video-wrapper {
+        position: relative;
+        width: 90%; max-width: 450px;
+        aspect-ratio: 16/9; /* Proporción de pantalla de móvil */
+        background: #000;
+        border-radius: 15px;
+        border: 8px solid #E8D595; /* Borde crema/oro Nookófono */
+        overflow: hidden; /* Para que la guía no sobresalga */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    #ac-qr-scanner-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Asegura que el video llene el contenedor */
+        transform: scaleX(1); /* No invertir espejo */
+    }
+
+    #ac-qr-scanner-guide {
+        position: absolute;
+        top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 60%; height: 60%; /* Marco de detección más centrado */
+        border: 4px dashed #FFD700; /* Amarillo Nookófono para el marco */
+        border-radius: 10px;
+        pointer-events: none; /* No bloquear clics */
+    }
+
+    /* Botón Cerrar - Estilo Nookófono */
+    #ac-qr-close-btn {
+        background: #E06060; /* Rojo suave Nookófono */
+        border: 3px solid #fff; color: white;
+        padding: 12px 30px; border-radius: 30px;
+        font-family: 'Seurat', sans-serif; font-size: 1.2rem;
+        cursor: pointer; box-shadow: 0 4px 0 #A04040;
+        transition: all 0.2s ease;
+    }
+    #ac-qr-close-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #A04040; }
+
+    /* Animación del botón Nookófono */
+    @keyframes ac-button-press {
+        0% { transform: scale(1); }
+        50% { transform: scale(0.95); }
+        100% { transform: scale(1); }
+    }
+</style>
+
+<button id="ac-qr-trigger-btn">Escanear el Siguiente QR</button>
+
+<div id="ac-qr-scanner-overlay">
+    <div id="ac-qr-scanner-header">¡Nookófono activado!</div>
+    <div id="ac-qr-scanner-video-wrapper">
+        <video id="ac-qr-scanner-video" playsinline></video>
+        <div id="ac-qr-scanner-guide"></div>
+    </div>
+    <button id="ac-qr-close-btn">Cerrar Nookófono</button>
+</div>
+
+<script>
+    (function() {
+        const triggerBtn = document.getElementById('ac-qr-trigger-btn');
+        const scannerOverlay = document.getElementById('ac-qr-scanner-overlay');
+        const video = document.getElementById('ac-qr-scanner-video');
+        const closeBtn = document.getElementById('ac-qr-close-btn');
+        
+        let scanning = false;
+        let animationFrameId;
+
+        // --- Función de detección de fin de juego (universal) ---
+        function checkAndShowQRButton() {
+            // Se busca el mensaje final de cumpleaños (si existe)
+            const finalMsg = document.getElementById('final-msg');
+            if (finalMsg && window.getComputedStyle(finalMsg).display !== 'none' && parseFloat(window.getComputedStyle(finalMsg).opacity) === 1) {
+                // Una vez que el mensaje final es visible y totalmente opaco, esperamos un momento y mostramos el botón.
+                // También ocultamos el personaje y el diálogo si aún están visibles.
+                setTimeout(() => {
+                    const characterImg = document.getElementById('character-img');
+                    const dialogContainer = document.getElementById('dialog-container');
+                    
+                    if (characterImg) characterImg.style.opacity = '0'; // Desvanecer personaje
+                    if (dialogContainer) dialogContainer.style.opacity = '0'; // Desvanecer diálogo
+
+                    setTimeout(() => {
+                        if (characterImg) characterImg.style.display = 'none';
+                        if (dialogContainer) dialogContainer.style.display = 'none';
+                        triggerBtn.style.display = 'block'; // Mostrar el botón de QR
+                    }, 500); // Dar tiempo para el desvanecimiento
+                }, 2000); // Esperar 2 segundos después del mensaje final para mostrar el botón
+                return; // Ya hemos encontrado el final, no necesitamos seguir buscando
+            }
+
+            // Si no es el final, seguimos vigilando
+            requestAnimationFrame(checkAndShowQRButton);
+        }
+
+        // --- Lógica del escáner QR ---
+        triggerBtn.addEventListener('click', () => {
+            scannerOverlay.style.display = 'flex';
+            startScanner();
+        });
+
+        closeBtn.addEventListener('click', () => {
+            stopScanner();
+            scannerOverlay.style.display = 'none';
+        });
+
+        async function startScanner() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+                video.play();
+                scanning = true;
+                tick(); // Empezar a escanear
+            } catch (err) {
+                alert("Para activar el Nookófono y escanear, necesitas permitir el acceso a la cámara. Asegúrate también de que la página se carga con HTTPS (candado seguro en la barra de dirección).");
+                console.error("Error al iniciar el escáner QR:", err);
+                scannerOverlay.style.display = 'none'; // Cerrar si hay error
+            }
+        }
+
+        function stopScanner() {
+            scanning = false;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        }
+
+        function tick() {
+            if (!scanning) return;
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvasElement = document.createElement("canvas");
+                canvasElement.width = video.videoWidth;
+                canvasElement.height = video.videoHeight;
+                const canvas = canvasElement.getContext("2d");
+                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+                if (code) {
+                    // Si el código es una URL (contiene "http"), redirigimos
+                    if (code.data.includes('http')) {
+                        stopScanner();
+                        window.location.href = code.data;
+                        return; // Detenemos la función para evitar más ticks
+                    }
+                }
+            }
+            animationFrameId = requestAnimationFrame(tick);
+        }
+
+        // Iniciar la vigilancia cuando la página se carga
+        window.addEventListener('load', checkAndShowQRButton);
+    })();
+</script>
 </body>
 </html>
+
