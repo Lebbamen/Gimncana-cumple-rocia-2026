@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gincana Animal Crossing - Gandulio y Encina</title>
+    <style>
+        /* Importación de fuente Seurat */
+        @font-face {
+            font-family: 'Seurat';
+            src: url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff2') format('woff2'),
+                 url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff') format('woff');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            background: #cbd58d; 
+            background-image: radial-gradient(rgba(255,255,255,0.4) 15%, transparent 20%);
+            background-size: 40px 40px;
+            font-family: 'Seurat', 'Arial Rounded MT Bold', 'Helvetica', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; 
+            align-items: center;
+            height: 100dvh; 
+            margin: 0; 
+            overflow: hidden; 
+            padding-bottom: 5vh;
+            transition: background 1s ease;
+        }
+
+        #magic-particles {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+        }
+
+        .sparkle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            filter: blur(1px);
+            box-shadow: 0 0 10px white;
+            animation: flash var(--d) infinite ease-in-out;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        #character-img {
+            width: 65vw; 
+            max-width: 260px;
+            height: auto;
+            z-index: 30;
+            margin-bottom: -30px; 
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+            pointer-events: none;
+            transition: transform 0.2s ease-out, filter 1s ease;
+        }
+
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center;
+            align-items: center; z-index: 100; backdrop-filter: blur(5px);
+        }
+
+        #btn-abrir {
+            background: #fdfae5; border: 6px solid #e8d595; color: #5d4a37;
+            padding: 15px 30px; border-radius: 50px; font-size: 1.5rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 8px 0 #c4b07a;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #dialog-container {
+            width: 90%; 
+            max-width: 600px; 
+            height: 190px; 
+            background: #fffdf0; 
+            border: 6px solid #f3e5ab; 
+            border-radius: 40px;
+            padding: 25px 30px; 
+            position: relative; 
+            box-shadow: 0 8px 0 #d9c9a0; 
+            cursor: pointer; 
+            display: none;
+            z-index: 20;
+        }
+
+        #name-tag {
+            position: absolute; 
+            top: -20px; left: 30px; 
+            background: #78a45c; 
+            color: white; 
+            padding: 8px 20px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 1.1rem;
+            border: 3px solid #fff;
+            z-index: 40;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #text { 
+            color: #5d4a37; font-family: 'Seurat', sans-serif;
+            font-weight: bold; font-size: clamp(1.1rem, 4vw, 1.3rem); 
+            line-height: 1.3; overflow: hidden; height: 100%;
+            white-space: pre-line;
+        }
+
+        #btn-reiniciar {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            background: #78a45c;
+            border: 3px solid #fff; 
+            color: white;
+            padding: 8px 15px; 
+            border-radius: 25px; 
+            font-size: 0.9rem;
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 4px 0 #4e6b3b;
+            z-index: 50;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #arrow { 
+            position: absolute; bottom: 20px; right: 30px; width: 0; height: 0; 
+            border-left: 10px solid transparent; border-right: 10px solid transparent; 
+            border-top: 15px solid #78a45c; animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(5px); } }
+    </style>
+</head>
+<body onclick="handleGlobalClick()">
+
+    <div id="magic-particles"></div>
+
+    <img id="character-img" src="https://dodo.ac/np/images/5/5f/Leif_LINE_Animated_Sticker.png" alt="Personaje">
+
+    <div id="overlay">
+        <button id="btn-abrir" onclick="empezarJuego(event)">Rincon de relax de Gandulio y Encina.</button>
+    </div>
+
+    <div id="dialog-container">
+        <div id="name-tag">Gandulio</div> 
+        <div id="text"></div>
+        <button id="btn-reiniciar" onclick="reiniciarGincana(event)">Reiniciar</button>
+        <div id="arrow" style="display:none"></div>
+    </div>
+
+    <audio id="voice-gandulio" src="gandulio.wav" loop></audio>
+    <audio id="voice-encina" src="encina.wav" loop></audio>
+    <audio id="magic-music" src="Hypno K.K..mp3" loop></audio>
+
+    <script>
+        const imgGandulio = "https://dodo.ac/np/images/1/1c/Leif_NH.png";
+        const imgEncina = "https://dodo.ac/np/images/c/c4/Poppy_NH.png";
+
+        const messages = [
+            { char: "Gandulio", text: "¡Holaaaa! ¡Pero qué salado que hayas venido a vernos! ¡Feliz cumpleaños! 🌿" },
+            { char: "Gandulio", text: "Estaba aquí mismo susurrándoles cosas bonitas a mis brotes de azalea para que crezcan con mucha fuerza hoy..." },
+            { char: "Gandulio", text: "He preparado un poco de zumo de bayas y he traído estas flores para que tu día huela como un jardín." },
+            { char: "Gandulio", text: "Me daría mucha pereza moverme ahora... se está tan a gusto que mis plantas y yo nos vamos a quedar aquí echando raíces. 💤" },
+            { char: "Encina", text: "¡Oh, ¡calabacitas!, muchísimas felicidades! 🎀" },
+            { char: "Encina", text: "He estado consultando mis enciclopedias, nutinú, y dicen que a los 30 años una persona florece igual de bien que los híbridos. 📖" },
+            { char: "Encina", text: "¡Él casi se queda frito mientras preparaba el refrigerio! ¡Ese conjunto de Pili te sienta de maravilla, terroncito!" },
+            { char: "Gandulio", text: "Es verdad, oye... qué salado te queda. Ya tienes el transporte, el confeti, el concierto y el estilazo." },
+            { char: "Gandulio", text: "Pero para encontrar el final, vas a tener que pensar un poco, saleroso... escucha bien:" },
+            // POEMA DIVIDIDO EN 4 PARTES
+            { char: "Gandulio", text: "Busca el lugar donde la charla fluye,\ny el cansancio del día siempre se diluye.", magic: true },
+            { char: "Gandulio", text: "Bajo lo que ves, hay otra realidad,\ndonde dados y fichas guardan su verdad.", magic: true },
+            { char: "Gandulio", text: "No es bosque ni playa, pero hay mucha madera,\ndonde el hambre se calma y la tarta te espera.", magic: true },
+            { char: "Gandulio", text: "Si exploras el fondo que el azar domina...\n¡hallarás la sorpresa del gran Azulino!", magic: true },
+            
+            { char: "Encina", text: "¡Calabacitas!, ¡estoy tan emocionada que me tiemblan hasta las orejas, nutinú! 🐿️" },
+            { char: "Encina", text: "¡Corre, corre! ¡Sigue la pista antes de que el misterio se resuelva solo! ¡Va a ser un momento ideal! 🏃‍♀️💨" }
+        ];
+
+        let currentMsgIndex = 0;
+        let charIndex = 0;
+        let isTyping = false;
+        let gameActive = false;
+
+        const textDiv = document.getElementById("text");
+        const nameTag = document.getElementById("name-tag");
+        const charImg = document.getElementById("character-img");
+        const restartBtn = document.getElementById("btn-reiniciar");
+        const arrow = document.getElementById("arrow");
+        const magicMusic = document.getElementById("magic-music");
+        const particlesContainer = document.getElementById("magic-particles");
+
+        function createSparkles() {
+            particlesContainer.innerHTML = '';
+            for(let i=0; i<30; i++) {
+                const s = document.createElement('div');
+                s.className = 'sparkle';
+                const size = Math.random() * 5 + 2;
+                s.style.width = size + 'px';
+                s.style.height = size + 'px';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.top = Math.random() * 100 + '%';
+                s.style.setProperty('--d', (Math.random() * 2 + 1) + 's');
+                s.style.animationDelay = Math.random() * 2 + 's';
+                particlesContainer.appendChild(s);
+            }
+        }
+
+        function updateCharacter() {
+            const currentObj = messages[currentMsgIndex];
+            nameTag.innerHTML = currentObj.char;
+            
+            if (currentObj.magic) {
+                document.body.style.background = "#2a1b3d"; 
+                document.body.style.backgroundImage = "radial-gradient(rgba(138, 43, 226, 0.4) 15%, transparent 20%)";
+                charImg.style.filter = "drop-shadow(0 0 20px rgba(191, 123, 255, 0.8)) brightness(1.2)";
+                particlesContainer.style.display = "block";
+                if(particlesContainer.children.length === 0) createSparkles();
+                magicMusic.volume = 0.5;
+                if(magicMusic.paused) magicMusic.play();
+            } else {
+                document.body.style.background = "#cbd58d";
+                document.body.style.backgroundImage = "radial-gradient(rgba(255,255,255,0.4) 15%, transparent 20%)";
+                charImg.style.filter = "drop-shadow(0 5px 15px rgba(0,0,0,0.1))";
+                particlesContainer.style.display = "none";
+                magicMusic.pause();
+                magicMusic.currentTime = 0;
+            }
+
+            if (currentObj.char === "Gandulio") {
+                charImg.src = imgGandulio;
+                nameTag.style.background = "#78a45c"; 
+                arrow.style.borderTopColor = "#78a45c";
+            } else {
+                charImg.src = imgEncina;
+                nameTag.style.background = "#d35b3e"; 
+                arrow.style.borderTopColor = "#d35b3e";
+            }
+        }
+
+        function handleGlobalClick() {
+            if (!gameActive) return;
+            if (isTyping) {
+                charIndex = messages[currentMsgIndex].text.length;
+                textDiv.innerHTML = messages[currentMsgIndex].text;
+                stopVoice();
+            } else {
+                if (currentMsgIndex < messages.length - 1) {
+                    currentMsgIndex++;
+                    updateCharacter();
+                    startMessage();
+                }
+            }
+        }
+
+        function startMessage() {
+            isTyping = true;
+            charIndex = 0;
+            textDiv.innerHTML = "";
+            restartBtn.style.display = "none";
+            arrow.style.display = "none";
+            
+            const currentObj = messages[currentMsgIndex];
+            if (currentObj.char === "Gandulio") {
+                document.getElementById("voice-gandulio").play();
+            } else {
+                document.getElementById("voice-encina").play();
+            }
+            
+            typeWriter();
+        }
+
+        function typeWriter() {
+            const currentText = messages[currentMsgIndex].text;
+            if (charIndex < currentText.length) {
+                textDiv.innerHTML += currentText.charAt(charIndex);
+                charIndex++;
+                let speed = (messages[currentMsgIndex].char === "Gandulio") ? 60 : 35;
+                setTimeout(typeWriter, speed);
+            } else {
+                stopVoice();
+            }
+        }
+
+        function stopVoice() {
+            isTyping = false;
+            document.getElementById("voice-gandulio").pause();
+            document.getElementById("voice-gandulio").currentTime = 0;
+            document.getElementById("voice-encina").pause();
+            document.getElementById("voice-encina").currentTime = 0;
+            
+            if (currentMsgIndex < messages.length - 1) {
+                arrow.style.display = "block";
+            } else {
+                restartBtn.style.display = "block";
+            }
+        }
+
+        function empezarJuego(event) {
+            event.stopPropagation(); 
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("dialog-container").style.display = "block";
+            gameActive = true;
+            updateCharacter();
+            startMessage();
+        }
+
+        function reiniciarGincana(event) {
+            event.stopPropagation(); 
+            currentMsgIndex = 0;
+            particlesContainer.innerHTML = '';
+            updateCharacter();
+            startMessage();
+        }
+    </script>
+<audio id="global-bgm" src="pista7.mp3" loop></audio>
+
+<script>
+    (function() {
+        const bgm = document.getElementById('global-bgm');
+        bgm.volume = 0.6; // Volumen de la música de fondo (0.0 a 1.0)
+
+        // Función para iniciar la música con el primer clic del usuario (exigencia de navegadores)
+        document.addEventListener('click', () => {
+            if (bgm.paused) bgm.play();
+        }, { once: true });
+
+        // Monitor de audios
+        setInterval(() => {
+            const allAudios = document.querySelectorAll('audio:not(#global-bgm)');
+            let specialAudioPlaying = false;
+
+            allAudios.forEach(audio => {
+                // Si el audio está sonando y NO es el balbuceo (animalese/voice)
+                // Ajusta los nombres de archivo según tus .wav
+                const isAnimalese = audio.src.includes('animalese') || 
+                                    audio.id.includes('voice') || 
+                                    audio.src.includes('gandulio.wav') || 
+                                    audio.src.includes('encina.wav');
+
+                if (!audio.paused && !isAnimalese) {
+                    specialAudioPlaying = true;
+                }
+            });
+
+            if (specialAudioPlaying) {
+                // Si suena algo importante (música de misterio, etc), pausamos el fondo
+                if (!bgm.paused) {
+                    bgm.pause();
+                }
+            } else {
+                // Si no hay audios especiales, el fondo sigue sonando
+                if (bgm.paused && document.getElementById('overlay').style.display === 'none') {
+                    bgm.play();
+                }
+            }
+        }, 300); // Revisa cada 300ms
+    })();
+</script>
+</body>
+</html>

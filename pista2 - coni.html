@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gincana Animal Crossing - Coni</title>
+    <style>
+        @font-face {
+            font-family: 'Seurat';
+            src: url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff2') format('woff2');
+            font-weight: bold;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            background: #ff8fb2; 
+            background-image: radial-gradient(white 15%, transparent 20%);
+            background-size: 40px 40px;
+            font-family: 'Seurat', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; 
+            align-items: center;
+            height: 100dvh; 
+            margin: 0; 
+            overflow: hidden; 
+            padding-bottom: 5vh;
+        }
+
+        #character-img {
+            width: 65vw; max-width: 280px; height: auto;
+            z-index: 30; margin-bottom: -40px; 
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+            pointer-events: none;
+        }
+
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center;
+            align-items: center; z-index: 100; backdrop-filter: blur(5px);
+        }
+
+        #btn-abrir {
+            background: #fdfae5; border: 6px solid #e8d595; color: #5d4a37;
+            padding: 15px 30px; border-radius: 50px; font-size: 1.5rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 8px 0 #c4b07a;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #dialog-container {
+            width: 90%; max-width: 600px; height: 180px; 
+            background: #fffdf0; border: 6px solid #f3e5ab; 
+            border-radius: 40px; padding: 30px 35px; position: relative; 
+            box-shadow: 0 8px 0 #d9c9a0; cursor: pointer; 
+            display: none; z-index: 20;
+        }
+
+        #name-tag {
+            position: absolute; top: -20px; left: 30px; 
+            background: #ff4d88; color: white; padding: 8px 20px; 
+            border-radius: 20px; font-weight: bold; font-size: 1.1rem;
+            border: 3px solid #fff; z-index: 40;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #text { 
+            color: #5d4a37; font-family: 'Seurat', sans-serif;
+            font-weight: bold; font-size: clamp(1.1rem, 4vw, 1.3rem); 
+            line-height: 1.3; overflow: hidden; height: 100%;
+        }
+
+        #btn-reiniciar {
+            display: none; position: absolute; bottom: 20px; right: 30px;
+            background: #ff4d88; border: 3px solid #fff; color: white;
+            padding: 8px 15px; border-radius: 25px; font-size: 0.9rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #c73666;
+            z-index: 50; font-family: 'Seurat', sans-serif;
+        }
+
+        #arrow { 
+            position: absolute; bottom: 20px; right: 30px; width: 0; height: 0; 
+            border-left: 10px solid transparent; border-right: 10px solid transparent; 
+            border-top: 15px solid #ff4d88; animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(5px); } }
+    </style>
+</head>
+<body onclick="handleGlobalClick()">
+    <img id="character-img" src="https://dodo.ac/np/images/0/00/Bunnie_NH_Transparent.png" alt="Coni">
+    <div id="overlay">
+        <button id="btn-abrir" onclick="empezarJuego(event)">¡Hablar con Coni!</button>
+    </div>
+    <div id="dialog-container">
+        <div id="name-tag">Coni</div> 
+        <div id="text"></div>
+        <button id="btn-reiniciar" onclick="reiniciarGincana(event)">Reiniciar</button>
+        <div id="arrow" style="display:none"></div>
+    </div>
+    <audio id="voice-sound" src="coni.wav" loop></audio>
+    <script>
+        const messages = [
+            "¡Fiuuu! ¡Pero si es la cumpleañera más 'in' de toda la isla! 🎀",
+            "¡Muchísimas felicidades, ideal! O sea, ¡estás radiante hoy! ✨",
+            "¡Estoy montando unas tiendas de campaña supercuquis para una 'pijama party' legendaria!",
+            "Pero oye, un banquete sin bayas no es un banquete... ¡y he visto algo muy fuerte! 😱",
+            "He visto a un mapache con camisa de flores haciendo cuentas cerca de algo que usas a diario...",
+            "¡Escucha bien! Dice que busca algo que tiene dientes, pero nunca va al dentista ni come manzanas. 🍎",
+            "A veces se pierde en el fondo de tu bolsa entre tantas bayas y herramientas...",
+            "Y aunque es mil veces más pequeñito que una puerta, ¡es lo único que manda sobre ella!",
+            "¡Si no lo encuentras, te quedarás fuera mirando las estrellas! ¡Ji, ji!✨",
+            "¡Corre, bombón! ¡Ve a ese lugar donde guardas 'eso' y mira si Tom Nook te da una sorpresa! ¡Fiuuu! 💖"
+        ];
+        let currentMsgIndex = 0; let charIndex = 0; let isTyping = false; let gameActive = false;
+        const textDiv = document.getElementById("text");
+        const restartBtn = document.getElementById("btn-reiniciar");
+        const arrow = document.getElementById("arrow");
+
+        function empezarJuego(event) {
+            event.stopPropagation(); 
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("dialog-container").style.display = "block";
+            gameActive = true;
+            startMessage();
+        }
+
+        function handleGlobalClick() {
+            if (!gameActive) return;
+            if (isTyping) {
+                charIndex = messages[currentMsgIndex].length;
+                textDiv.innerHTML = messages[currentMsgIndex];
+                stopVoice();
+            } else if (currentMsgIndex < messages.length - 1) {
+                currentMsgIndex++;
+                startMessage();
+            }
+        }
+
+        function startMessage() {
+            isTyping = true; charIndex = 0; textDiv.innerHTML = "";
+            restartBtn.style.display = "none"; arrow.style.display = "none";
+            document.getElementById("voice-sound").play();
+            typeWriter();
+        }
+
+        function typeWriter() {
+            if (charIndex < messages[currentMsgIndex].length) {
+                textDiv.innerHTML += messages[currentMsgIndex].charAt(charIndex);
+                charIndex++;
+                setTimeout(typeWriter, 40);
+            } else { stopVoice(); }
+        }
+
+        function stopVoice() {
+            isTyping = false;
+            document.getElementById("voice-sound").pause();
+            document.getElementById("voice-sound").currentTime = 0;
+            if (currentMsgIndex < messages.length - 1) { arrow.style.display = "block"; } 
+            else { restartBtn.style.display = "block"; }
+        }
+
+        function reiniciarGincana(event) {
+            event.stopPropagation(); currentMsgIndex = 0;
+            restartBtn.style.display = "none"; startMessage();
+        }
+    </script>
+<audio id="global-bgm" src="pista2.mp3" loop></audio>
+
+<script>
+    (function() {
+        const bgm = document.getElementById('global-bgm');
+        bgm.volume = 0.3; // Volumen de la música de fondo (0.0 a 1.0)
+
+        // Función para iniciar la música con el primer clic del usuario (exigencia de navegadores)
+        document.addEventListener('click', () => {
+            if (bgm.paused) bgm.play();
+        }, { once: true });
+
+        // Monitor de audios
+        setInterval(() => {
+            const allAudios = document.querySelectorAll('audio:not(#global-bgm)');
+            let specialAudioPlaying = false;
+
+            allAudios.forEach(audio => {
+                // Si el audio está sonando y NO es el balbuceo (animalese/voice)
+                // Ajusta los nombres de archivo según tus .wav
+                const isAnimalese = audio.src.includes('animalese') || 
+                                    audio.id.includes('voice') || 
+                                    audio.src.includes('coni.wav') || 
+                                    audio.src.includes('encina.wav');
+
+                if (!audio.paused && !isAnimalese) {
+                    specialAudioPlaying = true;
+                }
+            });
+
+            if (specialAudioPlaying) {
+                // Si suena algo importante (música de misterio, etc), pausamos el fondo
+                if (!bgm.paused) {
+                    bgm.pause();
+                }
+            } else {
+                // Si no hay audios especiales, el fondo sigue sonando
+                if (bgm.paused && document.getElementById('overlay').style.display === 'none') {
+                    bgm.play();
+                }
+            }
+        }, 300); // Revisa cada 300ms
+    })();
+</script>
+</body>
+</html>

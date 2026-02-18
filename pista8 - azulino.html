@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gincana Animal Crossing - Azulino</title>
+    <style>
+        /* Fuentes */
+        @font-face {
+            font-family: 'Seurat';
+            src: url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff2') format('woff2');
+            font-weight: bold;
+        }
+
+        @font-face {
+            font-family: 'FinkHeavy';
+            src: url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/FinkHeavy.woff2') format('woff2');
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            background: #a2dcfc; 
+            background-image: radial-gradient(white 20%, transparent 20%), radial-gradient(white 20%, transparent 20%);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            font-family: 'Arial Rounded MT Bold', 'Helvetica', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; 
+            align-items: center;
+            height: 100dvh; 
+            margin: 0; 
+            overflow: hidden; 
+            padding-bottom: 5vh;
+            transition: background 6s ease;
+        }
+
+        /* CIELO NOCTURNO */
+        body.night-mode {
+            background-color: #05070a;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 80px 120px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 110px 210px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 150px 50px, #eee, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 190px 150px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 210px 80px, #ddd, rgba(0,0,0,0));
+            background-size: 300px 300px;
+            animation: skyMove 60s linear infinite;
+        }
+
+        @keyframes skyMove {
+            from { background-position: 0 0; }
+            to { background-position: 300px 600px; }
+        }
+
+        #moon {
+            position: fixed; top: 10%; right: 15%; width: 80px; height: 80px;
+            border-radius: 50%; box-shadow: 15px 15px 0 0 #fdfae5;
+            opacity: 0; z-index: 1; transition: opacity 6s ease;
+        }
+
+        #confetti-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5; 
+        }
+
+        #character-img {
+            width: 65vw; max-width: 280px; height: auto;
+            z-index: 30; margin-bottom: -30px; 
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.15));
+            pointer-events: none;
+            transition: opacity 5s ease, transform 5s ease;
+        }
+
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center;
+            align-items: center; z-index: 100; backdrop-filter: blur(5px);
+        }
+
+        #btn-abrir {
+            background: #fdfae5; border: 6px solid #e8d595; color: #5d4a37;
+            padding: 15px 30px; border-radius: 50px; font-size: 1.5rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 8px 0 #c4b07a;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #dialog-container {
+            width: 90%; max-width: 600px; height: 195px; 
+            background: #fffdf0; border: 6px solid #f3e5ab; 
+            border-radius: 40px; padding: 25px 30px; position: relative; 
+            box-shadow: 0 8px 0 #d9c9a0; cursor: pointer; 
+            display: none; z-index: 20; transition: opacity 5s ease;
+        }
+
+        #name-tag {
+            position: absolute; top: -20px; left: 30px; 
+            background: #a389d4; color: white; padding: 8px 20px; 
+            border-radius: 20px; font-weight: bold; font-size: 1.1rem;
+            border: 3px solid #fff; z-index: 40; font-family: 'Seurat', sans-serif;
+        }
+
+        #text { color: #5d4a37; font-family: 'Seurat', sans-serif; font-weight: bold; font-size: clamp(0.95rem, 4vw, 1.2rem); line-height: 1.4; overflow: hidden; height: 100%; }
+
+        /* ESTILO LOGO ANIMAL CROSSING */
+        #final-msg {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 200; opacity: 0; display: none; width: 95%; text-align: center;
+            transition: opacity 3s ease;
+        }
+
+        .ac-letter {
+            display: inline-block;
+            font-family: 'FinkHeavy', 'Arial Black', sans-serif !important;
+            font-size: clamp(2.5rem, 12vw, 6rem);
+            color: #ffffff;
+            /* El contorno verde icónico del logo */
+            text-shadow: 
+                -4px -4px 0 #84c042,  
+                 4px -4px 0 #84c042,
+                -4px  4px 0 #84c042,
+                 4px  4px 0 #84c042,
+                 0px 8px 15px rgba(0,0,0,0.5);
+            margin: 0 4px;
+            filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));
+            line-height: 1.2;
+        }
+
+        #btn-reiniciar {
+            display: none; position: absolute; bottom: 20px; right: 30px;
+            background: #a389d4; border: 3px solid #fff; color: white;
+            padding: 8px 15px; border-radius: 25px; font-size: 0.9rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #7e67ad;
+            z-index: 300; font-family: 'Seurat', sans-serif;
+        }
+
+        #btn-reiniciar.final-btn { position: fixed; bottom: 10%; left: 50%; transform: translateX(-50%); font-size: 1.2rem; padding: 15px 30px; }
+
+        #arrow { position: absolute; bottom: 20px; right: 30px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 15px solid #a389d4; animation: bounce 0.6s infinite alternate; }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(5px); } }
+    </style>
+</head>
+<body onclick="handleGlobalClick()">
+
+    <div id="moon"></div>
+    <canvas id="confetti-canvas"></canvas>
+
+    <img id="character-img" src="https://dodo.ac/np/images/f/f2/Julian_NH.png" alt="Azulino">
+
+    <div id="overlay">
+        <button id="btn-abrir" onclick="empezarJuego(event)">¡Entrar al banquete final!</button>
+    </div>
+
+    <div id="dialog-container">
+        <div id="name-tag">Azulino</div> 
+        <div id="text"></div>
+        <div id="arrow" style="display:none"></div>
+    </div>
+
+    <div id="final-msg"></div>
+    <button id="btn-reiniciar" onclick="reiniciarGincana(event)">Volver a empezar</button>
+
+    <audio id="bg-music" src="feliz en tu dia.mp3" loop></audio>
+    <audio id="voice-sound" src="azulino.wav" loop></audio>
+
+    <script>
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let isFireworksMode = false;
+        let confettiOpacity = 1; 
+        const colors = ['#ff4d4d', '#ff944d', '#ffdb4d', '#a9ff4d', '#4dff88', '#4dffff', '#4da9ff', '#4d4dff', '#a94dff', '#ff4dff', '#ff4d88', '#ffd700'];
+
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+        class Particle {
+            constructor(isFirework = false, x, y, color) {
+                this.isFirework = isFirework;
+                this.x = x || Math.random() * canvas.width;
+                this.y = y || (Math.random() * canvas.height - canvas.height);
+                this.size = Math.random() * 7 + 4;
+                this.speed = isFirework ? (Math.random() * 5 + 2) : (Math.random() * 2 + 1.5);
+                this.angle = Math.random() * 6.28;
+                this.spin = Math.random() * 0.2 - 0.1;
+                this.color = color || colors[Math.floor(Math.random() * colors.length)];
+                this.vx = isFirework ? Math.cos(this.angle) * this.speed : 0;
+                this.vy = isFirework ? Math.sin(this.angle) * this.speed : this.speed;
+                this.life = 100;
+            }
+            update() {
+                if (this.isFirework) {
+                    this.x += this.vx; this.y += this.vy; this.vy += 0.05; this.life -= 1.5;
+                } else {
+                    this.y += this.vy; this.angle += this.spin;
+                    if (this.y > canvas.height && !isFireworksMode) { this.y = -20; this.x = Math.random() * canvas.width; }
+                }
+            }
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+                ctx.globalAlpha = this.isFirework ? (this.life / 100) : confettiOpacity;
+                ctx.fillStyle = this.color; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        function createFirework() {
+            if (!isFireworksMode) return;
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * (canvas.height * 0.6);
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            for (let i = 0; i < 30; i++) { particles.push(new Particle(true, x, y, color)); }
+        }
+
+        function initConfetti() {
+            particles = [];
+            for (let i = 0; i < 90; i++) { particles.push(new Particle()); }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (isFireworksMode && confettiOpacity > 0) confettiOpacity -= 0.01;
+            particles = particles.filter(p => p.isFirework ? p.life > 0 : confettiOpacity > 0.01);
+            particles.forEach(p => { p.update(); p.draw(); });
+            if (isFireworksMode && Math.random() < 0.05) createFirework();
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); initConfetti(); animate();
+
+        /* DIÁLOGOS */
+        const messages = [
+            "¡Oh, mon amie! Finalmente mis ojos (que son de un blanco purísimo, como habrás notado) se posan sobre ti. ✨",
+            "Debo decir que tu tenacidad es casi tan impresionante como la curva de mi cuerno bajo esta luz, pinchito. Casi.",
+            "¡Pero qué elegancia! Ese conjunto te sienta de una forma divina...",
+            "...aunque claro, nada resalta tanto como mi sombra de ojos púrpura, ¿no te parece? 💜",
+            "Sabía que una dama con tu sofisticación encontraría el camino hacia este rincón secreto.",
+            "He estado aquí esperando, manteniendo mi compostura y puliendo mis pezuñas negras...",
+            "...para ser el primero en brindar por tus espléndidos 30 años. Estás sencillamente radiante, pinchito. 🥂",
+            "Estás en el lugar donde la estrategia se une con el buen gusto.",
+            "He preparado este banquete pensando en lo bien que combinaría con las fotos de mi blog personal.",
+            "Después de todo, no todos los días se ve a un unicornio tan chic como yo haciendo de anfitrión.",
+            "Hoy la única estrella eres tú... aunque yo sea el centro de todas las miradas. 📸💙",
+            "No hace falta que me des las gracias por este recibimiento tan magnífico.",
+            "El placer de estar en presencia de un ser tan mitológico como yo es regalo suficiente, ¿verdad? ¡Je, je!",
+            "Es broma... o tal vez no, pinchito. 🤭 ¡Adelante, mademoiselle!",
+            "Esperamos que sigas siendo tú misma, ¡esa alegre rata de gym, devoradora de libros picantones y culona!🐰🥕",
+            "¡Abre tus regalos, deléitate con la comida y celebremos que el mundo es mucho más divertido desde que tú estás en él!",
+            "¡Feliz cumpleaños! 🎂🎁"
+        ];
+
+        let currentMsgIndex = 0;
+        let charIndex = 0;
+        let isTyping = false;
+        let gameActive = false;
+
+        const textDiv = document.getElementById("text");
+        const restartBtn = document.getElementById("btn-reiniciar");
+        const arrow = document.getElementById("arrow");
+        const charImg = document.getElementById("character-img");
+        const dialogContainer = document.getElementById("dialog-container");
+        const finalMsg = document.getElementById("final-msg");
+        const moon = document.getElementById("moon");
+
+        function empezarJuego(event) {
+            event.stopPropagation(); 
+            document.getElementById("overlay").style.display = "none";
+            dialogContainer.style.display = "block";
+            gameActive = true;
+            document.getElementById("bg-music").play();
+            startMessage();
+        }
+
+        function handleGlobalClick() {
+            if (!gameActive) return;
+            if (isTyping) {
+                charIndex = messages[currentMsgIndex].length;
+                textDiv.innerHTML = messages[currentMsgIndex];
+                stopVoice();
+            } else if (currentMsgIndex < messages.length - 1) {
+                currentMsgIndex++;
+                startMessage();
+            }
+        }
+
+        function startMessage() {
+            isTyping = true;
+            charIndex = 0;
+            textDiv.innerHTML = "";
+            restartBtn.style.display = "none";
+            arrow.style.display = "none";
+            document.getElementById("voice-sound").play();
+            typeWriter();
+        }
+
+        function typeWriter() {
+            if (charIndex < messages[currentMsgIndex].length) {
+                textDiv.innerHTML += messages[currentMsgIndex].charAt(charIndex);
+                charIndex++;
+                setTimeout(typeWriter, 40);
+            } else {
+                stopVoice();
+                if (currentMsgIndex === messages.length - 1) {
+                    iniciarSecuenciaFinal();
+                }
+            }
+        }
+
+        function stopVoice() {
+            isTyping = false;
+            document.getElementById("voice-sound").pause();
+            document.getElementById("voice-sound").currentTime = 0;
+            if (currentMsgIndex < messages.length - 1) { arrow.style.display = "block"; }
+        }
+
+        /* FUNCIÓN PARA GENERAR EL TEXTO ESTILO ANIMAL CROSSING LOGO */
+        function createACLogo(phrase) {
+            const container = document.getElementById("final-msg");
+            container.innerHTML = ""; 
+            const words = phrase.split(" ");
+            
+            words.forEach((word, wIdx) => {
+                const wordSpan = document.createElement("span");
+                wordSpan.style.whiteSpace = "nowrap";
+                wordSpan.style.display = "inline-block";
+                
+                word.split("").forEach((char, cIdx) => {
+                    const span = document.createElement("span");
+                    span.textContent = char;
+                    span.className = "ac-letter";
+                    
+                    // Rotación y movimiento aleatorio para cada letra (estilo Fink Heavy logo)
+                    const rot = (Math.random() * 16 - 8).toFixed(2);
+                    const y = (Math.random() * 20 - 10).toFixed(2);
+                    span.style.transform = `rotate(${rot}deg) translateY(${y}px)`;
+                    
+                    wordSpan.appendChild(span);
+                });
+                
+                container.appendChild(wordSpan);
+                // Añadir espacio entre palabras
+                if (wIdx < words.length - 1) {
+                    const space = document.createElement("span");
+                    space.style.width = "20px";
+                    space.style.display = "inline-block";
+                    container.appendChild(space);
+                }
+            });
+        }
+
+        function iniciarSecuenciaFinal() {
+            document.body.classList.add('night-mode');
+            charImg.style.opacity = "0";
+            dialogContainer.style.opacity = "0";
+            moon.style.opacity = "1";
+            isFireworksMode = true;
+
+            // Preparamos las letras desordenadas con la fuente Fink Heavy
+            createACLogo("Feliz cumpleaños Rocío");
+
+            setTimeout(() => {
+                finalMsg.style.display = "block";
+                setTimeout(() => { finalMsg.style.opacity = "1"; }, 100);
+
+                setTimeout(() => {
+                    restartBtn.classList.add('final-btn');
+                    restartBtn.style.display = "block";
+                }, 4000);
+            }, 7000); 
+        }
+
+        function reiniciarGincana(event) {
+            location.reload(); 
+        }
+    </script>
+</body>
+</html>

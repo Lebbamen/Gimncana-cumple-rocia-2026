@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gincana Animal Crossing - Pili y Ariel</title>
+    <style>
+        /* Importación Directa de la fuente Seurat */
+        @font-face {
+            font-family: 'Seurat';
+            src: url('https://cdn.jsdelivr.net/gh/clshortfuse/animal-crossing-font/font.woff2') format('woff2');
+            font-weight: bold;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            background: #9bd7d5; 
+            background-image: radial-gradient(rgba(255,255,255,0.3) 20%, transparent 20%);
+            background-size: 30px 30px;
+            font-family: 'Seurat', 'Arial Rounded MT Bold', 'Helvetica', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; 
+            align-items: center;
+            height: 100dvh; 
+            margin: 0; 
+            overflow: hidden; 
+            padding-bottom: 5vh;
+        }
+
+        #character-img {
+            width: 65vw; 
+            max-width: 260px;
+            height: auto;
+            z-index: 30;
+            margin-bottom: -35px; 
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+        }
+
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center;
+            align-items: center; z-index: 100; backdrop-filter: blur(5px);
+        }
+
+        #btn-abrir {
+            background: #fdfae5; border: 6px solid #e8d595; color: #5d4a37;
+            padding: 15px 30px; border-radius: 50px; font-size: 1.5rem;
+            font-weight: bold; cursor: pointer; box-shadow: 0 8px 0 #c4b07a;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #dialog-container {
+            width: 90%; 
+            max-width: 600px; 
+            height: 180px; 
+            background: #fffdf0; 
+            border: 6px solid #f3e5ab; 
+            border-radius: 40px;
+            padding: 30px 35px; 
+            position: relative; 
+            box-shadow: 0 8px 0 #d9c9a0; 
+            cursor: pointer; 
+            display: none;
+            z-index: 20;
+        }
+
+        #name-tag {
+            position: absolute; 
+            top: -20px; left: 30px; 
+            background: #4facfe; 
+            color: white; 
+            padding: 8px 20px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 1.1rem;
+            border: 3px solid #fff;
+            z-index: 40;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #text { 
+            color: #5d4a37; font-family: 'Seurat', sans-serif;
+            font-weight: bold; font-size: clamp(1.1rem, 4vw, 1.3rem); 
+            line-height: 1.3; overflow: hidden; height: 100%;
+        }
+
+        #btn-reiniciar {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            background: #4facfe;
+            border: 3px solid #fff; 
+            color: white;
+            padding: 8px 15px; 
+            border-radius: 25px; 
+            font-size: 0.9rem;
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 4px 0 #0076ad;
+            z-index: 50;
+            font-family: 'Seurat', sans-serif;
+        }
+
+        #arrow { 
+            position: absolute; bottom: 20px; right: 30px; width: 0; height: 0; 
+            border-left: 10px solid transparent; border-right: 10px solid transparent; 
+            border-top: 15px solid #4facfe; animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(5px); } }
+    </style>
+</head>
+<body onclick="handleGlobalClick()">
+
+    <img id="character-img" src="https://dodo.ac/np/images/d/db/Able_Sisters_To_Go_with_Mabel.png" alt="Personaje">
+
+    <div id="overlay">
+        <button id="btn-abrir" onclick="empezarJuego(event)">¡Entra al taller de costura!</button>
+    </div>
+
+    <div id="dialog-container">
+        <div id="name-tag">Pili</div> 
+        <div id="text"></div>
+        <button id="btn-reiniciar" onclick="reiniciarGincana(event)">Reiniciar</button>
+        <div id="arrow" style="display:none"></div>
+    </div>
+
+    <audio id="voice-pili" src="pili.wav" loop></audio>
+    <audio id="voice-ariel" src="ariel.wav" loop></audio>
+
+    <script>
+        const imgPili = "https://dodo.ac/np/images/8/80/Mabel_NH.png";
+        const imgAriel = "https://dodo.ac/np/images/9/90/Sasha_amiibo.png";
+
+        const messages = [
+            { char: "Pili", text: "¡Hola, Rocio pero qué guapa estás, prenda! ¡Y qué alegría que ya cumplas 30!" },
+            { char: "Pili", text: "Estaba dándole las últimas puntadas a tu conjunto de gala; ¡me han dolido hasta las púas de tanto coser!" },
+            { char: "Pili", text: "Pero ha valido la pena, vas a ser la envidia de toda la fiesta, prenda." },
+            { char: "Ariel", text: "¡Je, je! ¡Hola! ¡Felicidades! Tu nuevo estilo mola mazo —dice Ariel mientras bosteza—." },
+            { char: "Ariel", text: "Pili ha trabajado un montón, pero yo también he ayudado, ¿sabes, neutrino?" },
+            { char: "Ariel", text: "He probado la suavidad de todas las telas... echándome una siestecita encima. Mola dormir. ¡Zuuut!" },
+            { char: "Ariel", text: "¡Estás tan increíble que mola verte así! Hasta mis ojos se han despertado del todo, neutrino." },
+            { char: "Pili", text: "Pili te mira con orgullo: 'Ahora que ya tienes el look de estrella, necesitas un momento de paz, prenda'." },
+            { char: "Pili", text: "Gandulio y Encina han montado un rincón de relax en un sitio de la casa muy especial..." },
+            { char: "Pili", text: "Busca el lugar donde el ritmo de la isla se pausa, ese rincón mullido donde te sientas a charlar sin mirar el reloj." },
+            { char: "Pili", text: "Allí, donde los pies descansan pero la mente vuela." },
+            { char: "Ariel", text: "¡Ve a verlos, neutrino!" }
+        ];
+
+        let currentMsgIndex = 0;
+        let charIndex = 0;
+        let isTyping = false;
+        let gameActive = false;
+
+        const textDiv = document.getElementById("text");
+        const nameTag = document.getElementById("name-tag");
+        const charImg = document.getElementById("character-img");
+        const restartBtn = document.getElementById("btn-reiniciar");
+        const arrow = document.getElementById("arrow");
+
+        function empezarJuego(event) {
+            event.stopPropagation(); 
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("dialog-container").style.display = "block";
+            gameActive = true;
+            updateCharacter();
+            startMessage();
+        }
+
+        function updateCharacter() {
+            const currentObj = messages[currentMsgIndex];
+            nameTag.innerHTML = currentObj.char;
+            
+            if (currentObj.char === "Pili") {
+                charImg.src = imgPili;
+                nameTag.style.background = "#4facfe"; 
+                arrow.style.borderTopColor = "#4facfe";
+            } else {
+                charImg.src = imgAriel;
+                nameTag.style.background = "#ff9a9e"; 
+                arrow.style.borderTopColor = "#ff9a9e";
+            }
+        }
+
+        function handleGlobalClick() {
+            if (!gameActive) return;
+            if (isTyping) {
+                charIndex = messages[currentMsgIndex].text.length;
+                textDiv.innerHTML = messages[currentMsgIndex].text;
+                stopVoice();
+            } else {
+                if (currentMsgIndex < messages.length - 1) {
+                    currentMsgIndex++;
+                    updateCharacter();
+                    startMessage();
+                }
+            }
+        }
+
+        function startMessage() {
+            isTyping = true;
+            charIndex = 0;
+            textDiv.innerHTML = "";
+            restartBtn.style.display = "none";
+            arrow.style.display = "none";
+            
+            // Lógica para sonar una voz u otra
+            const currentObj = messages[currentMsgIndex];
+            if (currentObj.char === "Pili") {
+                document.getElementById("voice-pili").play();
+            } else {
+                document.getElementById("voice-ariel").play();
+            }
+            
+            typeWriter();
+        }
+
+        function typeWriter() {
+            const currentText = messages[currentMsgIndex].text;
+            if (charIndex < currentText.length) {
+                textDiv.innerHTML += currentText.charAt(charIndex);
+                charIndex++;
+                setTimeout(typeWriter, 35);
+            } else {
+                stopVoice();
+            }
+        }
+
+        function stopVoice() {
+            isTyping = false;
+            // Pausamos ambos por seguridad
+            document.getElementById("voice-pili").pause();
+            document.getElementById("voice-pili").currentTime = 0;
+            document.getElementById("voice-ariel").pause();
+            document.getElementById("voice-ariel").currentTime = 0;
+            
+            if (currentMsgIndex < messages.length - 1) {
+                arrow.style.display = "block";
+            } else {
+                restartBtn.style.display = "block";
+            }
+        }
+
+        function reiniciarGincana(event) {
+            event.stopPropagation(); 
+            currentMsgIndex = 0;
+            updateCharacter();
+            startMessage();
+        }
+    </script>
+
+    <audio id="global-bgm" src="pista6.mp3" loop></audio>
+
+    <script>
+        (function() {
+            const bgm = document.getElementById('global-bgm');
+            bgm.volume = 0.3;
+
+            document.addEventListener('click', () => {
+                if (bgm.paused) bgm.play();
+            }, { once: true });
+
+            setInterval(() => {
+                const allAudios = document.querySelectorAll('audio:not(#global-bgm)');
+                let specialAudioPlaying = false;
+
+                allAudios.forEach(audio => {
+                    const isAnimalese = audio.src.includes('animalese') || 
+                                        audio.id.includes('voice') || 
+                                        audio.src.includes('pili.wav') || 
+                                        audio.src.includes('ariel.wav');
+
+                    if (!audio.paused && !isAnimalese) {
+                        specialAudioPlaying = true;
+                    }
+                });
+
+                if (specialAudioPlaying) {
+                    if (!bgm.paused) bgm.pause();
+                } else {
+                    if (bgm.paused && document.getElementById('overlay').style.display === 'none') {
+                        bgm.play();
+                    }
+                }
+            }, 300);
+        })();
+    </script>
+</body>
+</html>
